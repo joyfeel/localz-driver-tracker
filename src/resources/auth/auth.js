@@ -14,14 +14,9 @@ export const signup = async (req, res, next) => {
         .send({ message: 'Wrong input of email, firstName and lastName' });
     }
 
-    const findDriver = await Driver.findOne(
-      {
-        email,
-      },
-      {
-        __v: false,
-      }
-    )
+    const findDriver = await Driver.findOne({
+      email,
+    })
       .lean()
       .exec();
 
@@ -43,9 +38,14 @@ export const login = async (req, res, next) => {
       return res.status(401).send({ message: 'Wrong input of email' });
     }
 
-    const driver = await Driver.findOne({
-      email,
-    })
+    const driver = await Driver.findOne(
+      {
+        email,
+      },
+      {
+        __v: false,
+      }
+    )
       .lean()
       .exec();
 
@@ -61,15 +61,21 @@ export const login = async (req, res, next) => {
       .exec();
 
     if (trackerSession) {
-      return res.status(200).send(driver);
+      return res.status(200).send({
+        ...driver,
+        trackerSessionId: trackerSession._id,
+      });
     }
 
-    await TrackerSession.create({
+    const newTrackerSession = await TrackerSession.create({
       driverId: driver._id,
       isActive: true,
     });
 
-    return res.status(200).send(driver);
+    return res.status(200).send({
+      ...driver,
+      trackerSessionId: newTrackerSession._id,
+    });
   } catch (e) {
     return res.status(500).end();
   }
@@ -93,7 +99,7 @@ export const logout = async (req, res, next) => {
       return res.status(401).send({ message: 'Invalid driver email' });
     }
 
-    const trackerSession = await TrackerSession.findOneAndUpdate(
+    await TrackerSession.findOneAndUpdate(
       {
         isActive: true,
       },
@@ -105,7 +111,7 @@ export const logout = async (req, res, next) => {
       .lean()
       .exec();
 
-    return res.status(200).send(trackerSession);
+    return res.status(200).send({ message: 'Logout successful' });
   } catch (e) {
     return res.status(500).end();
   }

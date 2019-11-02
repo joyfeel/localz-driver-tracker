@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import cuid from 'cuid'
-import _ from 'lodash'
+import _map from 'lodash/map'
 import config from './src/config'
 import { Driver } from './src/resources/driver/driver.model'
 import { Location } from './src/resources/location/location.model'
@@ -26,7 +26,7 @@ const remove = collection =>
 beforeEach(async done => {
   const db = cuid()
   function clearDB() {
-    return Promise.all(_.map(mongoose.connection.collections, c => remove(c)))
+    return Promise.all(_map(mongoose.connection.collections, c => remove(c)))
   }
 
   if (mongoose.connection.readyState === 0) {

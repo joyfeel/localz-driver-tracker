@@ -2,6 +2,11 @@ import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
 
+const reshapingOptions = {
+  // exclude .__v
+  versionKey: false,
+};
+
 const trackerSessionSchema = new mongoose.Schema(
   {
     driverId: {
@@ -22,7 +27,7 @@ const trackerSessionSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: reshapingOptions }
 );
 
 export const TrackerSession = mongoose.model(

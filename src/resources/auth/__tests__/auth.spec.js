@@ -224,7 +224,7 @@ describe('Auth', () => {
       await logout(undefined, res);
     });
 
-    test('step2', async () => {
+    test('returns message when logout successful', async () => {
       await signup(mockDriverReq, mockRes);
       await login(mockDriverReq, mockRes);
 
@@ -235,9 +235,7 @@ describe('Auth', () => {
           return this;
         },
         send(result) {
-          expect(result).toHaveProperty('_id');
-          expect(result).toHaveProperty('isActive', false);
-          expect(result).toHaveProperty('locationIds');
+          expect(typeof result.message).toBe('string');
         },
       };
 

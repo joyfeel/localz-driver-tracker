@@ -1,5 +1,8 @@
-import { signup, login } from '../../auth/auth';
-import { setLocationForTrackerSession } from '../location';
+import { signup, login, logout } from '../../auth/auth';
+import {
+  setLocationForTrackerSession,
+  showLocationsWithTrackerSession,
+} from '../location';
 import { Location } from '../location.model';
 import {
   mockDriverReq,
@@ -9,7 +12,7 @@ import {
 
 describe('Location', () => {
   describe('setLocationForTrackerSession', () => {
-    test('requires email, latitude and longitude', async () => {
+    test('401 wrong input', async () => {
       const req = { body: {} };
       const res = {
         status(status) {
@@ -24,25 +27,25 @@ describe('Location', () => {
       await setLocationForTrackerSession(req, res);
     });
 
-    test('ask driver to signup', async () => {
-      const req = { ...mockLatLongReq };
-      const res = {
-        status(status) {
-          expect(status).toBe(401);
-          return this;
-        },
+    test('403 ask driver to login', async () => {
+      let trackerSessionId;
+      await signup(mockDriverReq, mockRes);
+      await login(mockDriverReq, {
+        ...mockRes,
         send(result) {
-          expect(typeof result.message).toBe('string');
+          trackerSessionId = result.trackerSessionId;
+        },
+      });
+
+      await logout(mockDriverReq, mockRes);
+
+      const req = {
+        body: {
+          ...mockLatLongReq.body,
+          trackerSessionId: trackerSessionId,
         },
       };
 
-      await setLocationForTrackerSession(req, res);
-    });
-
-    test('ask driver to login', async () => {
-      await signup(mockDriverReq, mockRes);
-
-      const req = mockLatLongReq;
       const res = {
         status(status) {
           expect(status).toBe(403);
@@ -56,11 +59,36 @@ describe('Location', () => {
       await setLocationForTrackerSession(req, res);
     });
 
-    test('create a coordinate location and push into tracker session', async () => {
-      await signup(mockDriverReq, mockRes);
-      await login(mockDriverReq, mockRes);
+    test('500 catch block ', async () => {
+      const res = {
+        status(status) {
+          expect(status).toBe(500);
+          return this;
+        },
+        end() {
+          expect(true).toBe(true);
+        },
+      };
 
-      const req = mockLatLongReq;
+      await setLocationForTrackerSession(undefined, res);
+    });
+
+    test('create a coordinate location and push into tracker session', async () => {
+      let trackerSessionId;
+      await signup(mockDriverReq, mockRes);
+      await login(mockDriverReq, {
+        ...mockRes,
+        send(result) {
+          trackerSessionId = result.trackerSessionId;
+        },
+      });
+
+      const req = {
+        body: {
+          ...mockLatLongReq.body,
+          trackerSessionId: trackerSessionId,
+        },
+      };
 
       const res = {
         status(status) {
@@ -82,6 +110,23 @@ describe('Location', () => {
 
       await setLocationForTrackerSession(req, res);
     });
+  });
+
+  describe('showLocationsWithTrackerSession', () => {
+    test('401 wrong input', async () => {
+      const req = { query: {} };
+      const res = {
+        status(status) {
+          expect(status).toBe(401);
+          return this;
+        },
+        send(result) {
+          expect(typeof result.message).toBe('string');
+        },
+      };
+
+      await showLocationsWithTrackerSession(req, res);
+    });
 
     test('500 catch block ', async () => {
       const res = {
@@ -94,7 +139,38 @@ describe('Location', () => {
         },
       };
 
-      await setLocationForTrackerSession(undefined, res);
+      await showLocationsWithTrackerSession(undefined, res);
+    });
+
+    test('returns activeSessions with empty locationIds', async () => {
+      let driverId;
+      await signup(mockDriverReq, mockRes);
+      await login(mockDriverReq, {
+        ...mockRes,
+        send(result) {
+          driverId = result._id.toString();
+        },
+      });
+
+      const req = {
+        query: {
+          driverId,
+        },
+      };
+
+      const res = {
+        status(status) {
+          expect(status).toBe(200);
+          return this;
+        },
+        send(result) {
+          expect(result).toHaveLength(1);
+          expect(result[0]).toHaveProperty('_id');
+          expect(result[0]).toHaveProperty('locationIds', []);
+        },
+      };
+
+      await showLocationsWithTrackerSession(req, res);
     });
   });
 });

@@ -8,7 +8,6 @@ export const mockDriverReq = {
 
 export const mockLatLongReq = {
   body: {
-    email: 'joybee210@gmail.com',
     latitude: -37.61381,
     longitude: 144.6660788,
   },

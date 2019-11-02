@@ -1,41 +1,28 @@
 import validator from 'validator';
-import { Driver } from '../driver/driver.model';
+import mongoose from 'mongoose';
 import { Location } from './location.model';
 import { TrackerSession } from '../trackerSession/trackerSession.model';
 
 export const setLocationForTrackerSession = async (req, res, next) => {
   try {
-    const email = req.body.email || '';
     const latitude = req.body.latitude || '';
     const longitude = req.body.longitude || '';
+    const trackerSessionId = req.body.trackerSessionId || '';
 
     if (
-      !validator.isEmail(email) ||
-      !validator.isLatLong(`${latitude.toString()}, ${longitude.toString()}`)
+      !validator.isLatLong(`${latitude.toString()}, ${longitude.toString()}`) ||
+      !mongoose.Types.ObjectId.isValid(trackerSessionId)
     ) {
-      return res
-        .status(401)
-        .send({ message: 'Wrong email or not a valid geographic coordinate' });
+      return res.status(401).send({
+        message: 'Wrong tracker session id or invalid geographic coordinates',
+      });
     }
 
-    const driver = await Driver.findOne({
-      email,
-    })
+    const activeTrackerSession = await TrackerSession.findById(trackerSessionId)
       .lean()
       .exec();
 
-    if (!driver) {
-      return res.status(401).send({ message: 'You need to signup' });
-    }
-
-    const activeTrackerSession = await TrackerSession.findOne({
-      isActive: true,
-      driverId: driver._id,
-    })
-      .lean()
-      .exec();
-
-    if (!activeTrackerSession) {
+    if (!activeTrackerSession || !activeTrackerSession.isActive) {
       return res.status(403).send({ message: 'You need to login' });
     }
 
@@ -44,11 +31,8 @@ export const setLocationForTrackerSession = async (req, res, next) => {
       coordinates: [latitude, longitude],
     });
 
-    const trackerSession = await TrackerSession.findOneAndUpdate(
-      {
-        isActive: true,
-        driverId: driver._id,
-      },
+    const trackerSession = await TrackerSession.findByIdAndUpdate(
+      trackerSessionId,
       {
         $push: {
           locationIds: location._id,
@@ -60,6 +44,30 @@ export const setLocationForTrackerSession = async (req, res, next) => {
       .exec();
 
     return res.status(200).send(trackerSession);
+  } catch (e) {
+    return res.status(500).end();
+  }
+};
+
+export const showLocationsWithTrackerSession = async (req, res, next) => {
+  try {
+    const { driverId } = req.query;
+    if (typeof driverId !== 'string') {
+      return res.status(401).send({ message: 'Wrong input of driver ID' });
+    }
+
+    const activeSessions = await TrackerSession.find(
+      {
+        driverId,
+        isActive: true,
+      },
+      { locationIds: true }
+    )
+      .populate('locationIds', { __v: false, type: false })
+      .lean()
+      .exec();
+
+    return res.status(200).send(activeSessions);
   } catch (e) {
     return res.status(500).end();
   }

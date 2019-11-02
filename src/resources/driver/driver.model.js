@@ -1,5 +1,10 @@
 import mongoose from 'mongoose';
 
+const reshapingOptions = {
+  // exclude .__v
+  versionKey: false,
+};
+
 const driverSchema = new mongoose.Schema(
   {
     email: {
@@ -19,7 +24,7 @@ const driverSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: reshapingOptions }
 );
 
 export const Driver = mongoose.model('Driver', driverSchema);
