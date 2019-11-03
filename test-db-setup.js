@@ -1,15 +1,17 @@
 import mongoose from 'mongoose'
 import cuid from 'cuid'
 import _map from 'lodash/map'
-import config from './src/config'
 import { Driver } from './src/resources/driver/driver.model'
 import { Location } from './src/resources/location/location.model'
 import { TrackerSession } from './src/resources/trackerSession/trackerSession.model'
+require('dotenv').config()
 
 const models = { Driver, Location, TrackerSession }
 
-// tesing
-const url = config.dbUrl;
+const url =
+process.env.MONGO_USERNAME || process.env.MONGO_PASSWORD
+  ? `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@${process.env.MONGO_HOSTNAME}:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}`
+  : `mongodb://${process.env.MONGO_HOSTNAME}:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}`;
 
 global.newId = () => {
   return mongoose.Types.ObjectId()
