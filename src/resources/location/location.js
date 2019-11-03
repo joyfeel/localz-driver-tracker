@@ -1,5 +1,5 @@
-import validator from 'validator';
 import mongoose from 'mongoose';
+import validator from 'validator';
 import { Location } from './location.model';
 import { TrackerSession } from '../trackerSession/trackerSession.model';
 
@@ -7,7 +7,7 @@ export const setLocationForTrackerSession = async (req, res, next) => {
   try {
     const latitude = req.body.latitude || '';
     const longitude = req.body.longitude || '';
-    const trackerSessionId = req.body.trackerSessionId || '';
+    const trackerSessionId = req.body.trackerSessionId;
 
     if (
       !validator.isLatLong(`${latitude.toString()}, ${longitude.toString()}`) ||
@@ -40,6 +40,7 @@ export const setLocationForTrackerSession = async (req, res, next) => {
       },
       { new: true }
     )
+      .select('-__v')
       .lean()
       .exec();
 
@@ -51,8 +52,9 @@ export const setLocationForTrackerSession = async (req, res, next) => {
 
 export const showLocationsWithTrackerSession = async (req, res, next) => {
   try {
-    const { driverId } = req.query;
-    if (typeof driverId !== 'string') {
+    const driverId = req.query.driverId;
+
+    if (!mongoose.Types.ObjectId.isValid(driverId)) {
       return res.status(401).send({ message: 'Wrong input of driver ID' });
     }
 

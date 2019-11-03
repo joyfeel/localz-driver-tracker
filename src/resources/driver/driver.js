@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Driver } from './driver.model';
 
 export const listDrivers = async (req, res, next) => {
@@ -10,14 +11,12 @@ export const listDrivers = async (req, res, next) => {
 
 export const searchDriver = async (req, res, next) => {
   try {
-    const { firstName } = req.query;
-    const { lastName } = req.query;
+    const firstName = req.query.firstName || '';
+    const lastName = req.query.lastName || '';
 
     // Can input either one
-    if (typeof firstName !== 'string' && typeof lastName !== 'string') {
-      return res
-        .status(400)
-        .send({ message: 'Wrong input of firstName and lastName' });
+    if (typeof firstName !== 'string' || typeof lastName !== 'string') {
+      return res.status(401).send({ message: 'Wrong input of name' });
     }
 
     const drivers = await Driver.find(
@@ -43,7 +42,7 @@ export const getDriver = async (req, res, next) => {
   try {
     const driverId = req.params.id;
 
-    if (typeof driverId !== 'string') {
+    if (!mongoose.Types.ObjectId.isValid(driverId)) {
       return res.status(400).send({ message: 'Wrong input of driver ID' });
     }
 
@@ -51,6 +50,9 @@ export const getDriver = async (req, res, next) => {
       .lean()
       .exec();
 
+    if (!driver) {
+      return res.status(404).send({ message: 'Not found this driver' });
+    }
     return res.status(200).send(driver);
   } catch (e) {
     return res.status(500).end();

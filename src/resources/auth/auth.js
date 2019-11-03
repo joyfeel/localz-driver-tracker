@@ -8,10 +8,12 @@ export const signup = async (req, res, next) => {
     const firstName = req.body.firstName || '';
     const lastName = req.body.lastName || '';
 
-    if (!validator.isEmail(email) || !firstName || !lastName) {
-      return res
-        .status(401)
-        .send({ message: 'Wrong input of email, firstName and lastName' });
+    if (
+      !validator.isEmail(email) ||
+      typeof firstName !== 'string' ||
+      typeof lastName !== 'string'
+    ) {
+      return res.status(401).send({ message: 'Wrong input of email or name' });
     }
 
     const findDriver = await Driver.findOne({

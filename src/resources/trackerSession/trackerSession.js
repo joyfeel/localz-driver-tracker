@@ -1,9 +1,11 @@
+import mongoose from 'mongoose';
 import { TrackerSession } from './trackerSession.model';
 
 export const showInactiveTrackerSessions = async (req, res, next) => {
   try {
-    const { driverId } = req.query;
-    if (typeof driverId !== 'string') {
+    const driverId = req.query.driverId;
+
+    if (!mongoose.Types.ObjectId.isValid(driverId)) {
       return res.status(401).send({ message: 'Wrong input of driver ID' });
     }
 

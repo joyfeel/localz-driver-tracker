@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { signup } from '../../auth/auth';
 import { listDrivers, searchDriver, getDriver } from '../driver';
 import { mockDriverReq, mockRes } from '../../../utils/__mocks__/driver';
@@ -31,14 +32,16 @@ describe('Driver', () => {
   });
 
   describe('searchDriver', () => {
-    test('400 if wrong input firstname or lastname', async () => {
+    test('401 if wrong input name', async () => {
       const req = {
-        query: {},
+        query: {
+          firstName: 123,
+        },
       };
 
       const res = {
         status(status) {
-          expect(status).toBe(400);
+          expect(status).toBe(401);
           return this;
         },
         send(result) {
@@ -153,13 +156,33 @@ describe('Driver', () => {
     test('400 if wrong driver id', async () => {
       const req = {
         params: {
-          id: 123,
+          id: '123',
         },
       };
 
       const res = {
         status(status) {
           expect(status).toBe(400);
+          return this;
+        },
+        send(result) {
+          expect(typeof result.message).toBe('string');
+        },
+      };
+
+      await getDriver(req, res);
+    });
+
+    test('404 not found', async () => {
+      const req = {
+        params: {
+          id: mongoose.Types.ObjectId(),
+        },
+      };
+
+      const res = {
+        status(status) {
+          expect(status).toBe(404);
           return this;
         },
         send(result) {
